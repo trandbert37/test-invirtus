@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+          integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+          crossorigin=""/>
+    <style>
+        #map {
+            height: 800px;
+        }
+    </style>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+            integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+            crossorigin=""></script>
+{% endblock %}
+{% block body %}
+    <div id="map">
+    </div>
+    <script type="application/javascript">
+
+        function buildMap() {
+            // initialize the map on the "map" div
+            let map = L.map('map');
+
+            L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                maxZoom: 18,
+                id: 'mapbox.streets',
+                accessToken: 'pk.eyJ1IjoidHJhbmRiZXJ0IiwiYSI6ImNrMmcwdnh2dzA2Z2UzaHBmZG9xbnBxZ2YifQ.CdgKyBB_em9mk6QRl7Kc5A'
+            }).addTo(map);
+
+            getLocations().then(function (locations) {
+                let pointsList = [];
+                locations.forEach(function (location) {
+                    let point = new L.LatLng(location.latitude, location.longitude);
+                    // Add markers
+                    L.marker(point).addTo(map);
+                    pointsList.push(point);
+                });
+                // Auto zoom map with markers
+                map.fitBounds(new L.LatLngBounds(pointsList));
+                // Draw lines between markers
+                new L.Polyline(pointsList).addTo(map);
+            });
+
+        }
+
+        const getLocations = async () => {
+            const response = await fetch("{{ url('view_locations', {'viewId': viewId}) }}");
+            return await response.json(); //extract JSON from the http response
+        };
+        // When dom is ready
+        (function () {
+            buildMap();
+        })();
+    </script>
+{% endblock %}
